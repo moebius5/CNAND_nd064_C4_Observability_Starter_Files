@@ -11,6 +11,9 @@ from opentelemetry.instrumentation.requests import RequestsInstrumentor
 from prometheus_flask_exporter.multiprocess import GunicornInternalPrometheusMetrics
 import logging
 
+from random import randint
+from time import sleep
+
 app = Flask(__name__)
 FlaskInstrumentor().instrument_app(app)
 RequestsInstrumentor().instrument()
@@ -48,15 +51,29 @@ app.config[
 mongo = PyMongo(app)
 
 
+# generates delays from 60 to 130 ms, as if the real work performed (eg.request remote API-site)
+def delay_generator():
+    delay = randint(6, 13) / 100
+    return delay
+
+
 @app.route("/")
 def homepage():
-    return "Hello World"
+    message = "Hello World"
+    with tracer.start_span("homepage") as span:
+        span.set_tag("message", message)
+        sleep(delay_generator())
+    return message
 
 
 @app.route("/api")
 def my_api():
-    answer = "something"
-    return jsonify(repsonse=answer)
+    delay = delay_generator()
+    answer = f'I did something in {delay*1000} ms'
+    with tracer.start_span("my_api_worker") as span:
+        span.set_tag("job_name", "some_data_handler")
+        sleep(delay)
+    return jsonify(response=answer)
 
 
 @app.route("/star", methods=["POST"])
