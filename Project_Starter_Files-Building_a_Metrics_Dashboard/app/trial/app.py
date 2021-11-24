@@ -9,16 +9,14 @@ from jaeger_client import Config
 from jaeger_client.metrics.prometheus import PrometheusMetricsFactory
 from opentelemetry.instrumentation.flask import FlaskInstrumentor
 from opentelemetry.instrumentation.requests import RequestsInstrumentor
-from prometheus_flask_exporter import PrometheusMetrics
+from prometheus_flask_exporter.multiprocess import GunicornInternalPrometheusMetrics
 
 
 app = Flask(__name__)
 FlaskInstrumentor().instrument_app(app)
 RequestsInstrumentor().instrument()
 
-metrics = PrometheusMetrics(app)
-# static information as metric
-metrics.info("app_info", "Application info", version="1.0.3")
+metrics = GunicornInternalPrometheusMetrics(app)
 
 logging.getLogger("").handlers = []
 logging.basicConfig(format="%(message)s", level=logging.DEBUG)
