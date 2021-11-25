@@ -3,7 +3,10 @@ kind: Deployment
 metadata:
   name: frontend-app
   annotations:
-    "sidecar.jaegertracing.io/inject": "true"
+    sidecar.jaegertracing.io/inject: "true"
+    prometheus.io/scrape: "true"
+    prometheus.io/path: /metrics
+    prometheus.io/port: frontendport
 spec:
   replicas: 1
   selector:
@@ -18,7 +21,9 @@ spec:
       - name: frontend
         image: moebius5/nd064-dashboards-frontend:latest
         ports:
-        - containerPort: 8080
+        - name: frontendport
+          containerPort: 8080
+          protocol: TCP
 ---
 apiVersion: v1
 kind: Service
@@ -31,6 +36,7 @@ spec:
     app: frontend
   ports:
     - name: frontend
+      protocol: TCP
       port: 8080
-      targetPort: 8080
+      targetPort: frontendport
   type: LoadBalancer

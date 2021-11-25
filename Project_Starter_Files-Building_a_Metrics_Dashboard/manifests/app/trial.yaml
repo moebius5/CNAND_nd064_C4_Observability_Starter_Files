@@ -3,7 +3,10 @@ kind: Deployment
 metadata:
   name: trial-app
   annotations:
-    "sidecar.jaegertracing.io/inject": "true"
+    sidecar.jaegertracing.io/inject: "true"
+    prometheus.io/scrape: "true"
+    prometheus.io/path: /metrics
+    prometheus.io/port: trialport
 spec:
   replicas: 1
   selector:
@@ -18,7 +21,9 @@ spec:
       - name: trial
         image: moebius5/nd064-dashboards-trial:latest
         ports:
-        - containerPort: 8080
+        - name: trialport
+          containerPort: 8080
+          protocol: TCP
 ---
 apiVersion: v1
 kind: Service
@@ -31,6 +36,7 @@ spec:
     app: trial
   ports:
     - name: trial
+      protocol: TCP
       port: 8082
-      targetPort: 8080
+      targetPort: trialport
   type: LoadBalancer
